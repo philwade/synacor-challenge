@@ -54,7 +54,7 @@ class Vm:
             8: self.jf,
             9: self.add,
             12: self.band,
-            12: self.bor,
+            13: self.bor,
             19: self.out,
             21: self.noop,
         };
