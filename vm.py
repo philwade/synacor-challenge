@@ -48,10 +48,13 @@ class Vm:
             2: self.push,
             3: self.pop,
             4: self.eq,
+            5: self.gt,
             6: self.jmp,
             7: self.jt,
             8: self.jf,
             9: self.add,
+            12: self.band,
+            12: self.bor,
             19: self.out,
             21: self.noop,
         };
@@ -134,10 +137,43 @@ class Vm:
 
     def pop(self):
         value = self.memory.pop()
-        self.location += 1
-        target = self.memory.get(self.location)
+        target = self.memory.getAddress(self.location)
         self.memory.set(target, value)
         self.location += 1
+
+    def gt(self):
+        target = self.memory.getAddress(self.location)
+        self.location += 1
+        b_value = self.memory.get(self.location)
+        self.location += 1
+        c_value = self.memory.get(self.location)
+
+        if b_value > c_value:
+            self.memory.set(target, 1)
+        else:
+            self.memory.set(target, 0)
+        self.location += 1
+
+    def band(self):
+        target = self.memory.getAddress(self.location)
+        self.location += 1
+        b_value = self.memory.get(self.location)
+        self.location += 1
+        c_value = self.memory.get(self.location)
+        value = b_value & c_value
+        self.memory.set(target, value)
+        self.location += 1
+
+    def bor(self):
+        target = self.memory.getAddress(self.location)
+        self.location += 1
+        b_value = self.memory.get(self.location)
+        self.location += 1
+        c_value = self.memory.get(self.location)
+        value = b_value | c_value
+        self.memory.set(target, value)
+        self.location += 1
+
 
 if __name__ == "__main__":
     v = Vm(sys.argv[1])
