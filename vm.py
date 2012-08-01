@@ -24,7 +24,7 @@ class Memory:
         if address < 32768:
             self.memory[address] = value
         else:
-            self.registry[address % 8] = value
+            self.registry[address % 8] = value % 32768
 
     # for when we don't want transparent registry access
     def getAddress(self, address):
@@ -53,8 +53,15 @@ class Vm:
             7: self.jt,
             8: self.jf,
             9: self.add,
+            10: self.mult,
+            11: self.mod,
             12: self.band,
             13: self.bor,
+            14: self.bnot,
+            15: self.rmem,
+            16: self.wmem,
+            17: self.call,
+            18: self.ret,
             19: self.out,
             21: self.noop,
         };
@@ -108,23 +115,14 @@ class Vm:
         self.location += 1
 
     def add(self):
-        target = self.memory.getAddress(self.location)
-        self.location += 1
-        a_value = self.memory.get(self.location)
-        self.location += 1
-        b_value = self.memory.get(self.location)
-        value = (a_value + b_value) % 8
-        self.memory.set(target, value)
+        target, a, b = self._addressAndTwoValues()
+        self.memory.set(target, a + b)
         self.location += 1
 
     def eq(self):
-        target = self.memory.getAddress(self.location)
-        self.location += 1
-        a_value = self.memory.get(self.location)
-        self.location += 1
-        b_value = self.memory.get(self.location)
+        target, a, b = self._addressAndTwoValues()
 
-        if a_value == b_value:
+        if a == b:
             self.memory.set(target, 1)
         else:
             self.memory.set(target, 0)
@@ -142,38 +140,74 @@ class Vm:
         self.location += 1
 
     def gt(self):
-        target = self.memory.getAddress(self.location)
-        self.location += 1
-        b_value = self.memory.get(self.location)
-        self.location += 1
-        c_value = self.memory.get(self.location)
+        target, b, c = self._addressAndTwoValues()
 
-        if b_value > c_value:
+        if b > c:
             self.memory.set(target, 1)
         else:
             self.memory.set(target, 0)
         self.location += 1
 
     def band(self):
-        target = self.memory.getAddress(self.location)
-        self.location += 1
-        b_value = self.memory.get(self.location)
-        self.location += 1
-        c_value = self.memory.get(self.location)
-        value = b_value & c_value
-        self.memory.set(target, value)
+        target, b, c = self._addressAndTwoValues()
+        self.memory.set(target, b & c)
         self.location += 1
 
     def bor(self):
+        target, a, b = self._addressAndTwoValues()
+        self.memory.set(target, a | b)
+        self.location += 1
+
+    def bnot(self):
         target = self.memory.getAddress(self.location)
         self.location += 1
-        b_value = self.memory.get(self.location)
+        value = self.memory.get(self.location)
+        self.memory.set(target, ~value)
         self.location += 1
-        c_value = self.memory.get(self.location)
-        value = b_value | c_value
+
+    def call(self):
+        next_instruction_address = self.location + 1
+        self.memory.push(next_instruction_address)
+        jump_to = self.memory.get(self.location)
+        self.location = jump_to
+
+    def mult(self):
+        target, a, b = self._addressAndTwoValues()
+        self.memory.set(target, a * b)
+        self.location += 1
+
+    def mod(self):
+        target, a, b = self._addressAndTwoValues()
+        self.memory.set(target, a % b)
+        self.location += 1
+
+    def rmem(self):
+        target = self.memory.getAddress(self.location)
+        self.location += 1
+        value_to_get = self.memory.get(self.location)
+        value = self.memory.get(value_to_get)
         self.memory.set(target, value)
         self.location += 1
 
+    def wmem(self):
+        target = self.memory.get(self.location)
+        self.location += 1
+        value = self.memory.get(self.location)
+        self.memory.set(target, value)
+        self.location += 1
+
+    def ret(self):
+        jump_to = self.memory.pop()
+        self.location = jump_to
+
+    def _addressAndTwoValues(self):
+        target = self.memory.getAddress(self.location)
+        self.location += 1
+        a_value = self.memory.get(self.location)
+        self.location += 1
+        b_value = self.memory.get(self.location)
+
+        return target, a_value, b_value
 
 if __name__ == "__main__":
     v = Vm(sys.argv[1])
