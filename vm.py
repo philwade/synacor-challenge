@@ -63,6 +63,7 @@ class Vm:
             17: self.call,
             18: self.ret,
             19: self.out,
+            20: self.rin,
             21: self.noop,
         };
 
@@ -199,6 +200,12 @@ class Vm:
     def ret(self):
         jump_to = self.memory.pop()
         self.location = jump_to
+
+    def rin(self):
+        char = sys.stdin.read(1)
+        target = self.memory.getAddress(self.location)
+        self.memory.set(target, ord(char))
+        self.location += 1
 
     def _addressAndTwoValues(self):
         target = self.memory.getAddress(self.location)
