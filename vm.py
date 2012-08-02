@@ -69,14 +69,23 @@ class Vm:
 
     def run(self):
         while True:
-            instruction = self.memory.get(self.location)
-            if instruction in self.ops:
-                func = self.ops[instruction]
-                self.location += 1 #we always want the next value going into an op
-                func()
-            else:
-                print "unknown opcode: %i" % instruction
-                exit()
+            self._nextStep()
+
+    # advance n steps
+    def step(self, n):
+        if n > 0:
+            self._nextStep()
+            self.step(n - 1)
+
+    def _nextStep(self):
+        instruction = self.memory.get(self.location)
+        if instruction in self.ops:
+            func = self.ops[instruction]
+            self.location += 1 #we always want the next value going into an op
+            func()
+        else:
+            print "unknown opcode: %i" % instruction
+            exit()
 
     def noop(self):
         print "noop!"
