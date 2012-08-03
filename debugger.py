@@ -18,11 +18,6 @@ class debugger:
         self.vm = vm
         self.c = color_printer()
 
-        self.func_map = {
-            's' : 'step',
-            'st': 'step_till',
-        }
-
         self.codes = {
                 0: 'EXIT',
                 1: 'SET',
@@ -48,19 +43,70 @@ class debugger:
                 21: 'NOOP',
         }
 
+        self.func_map = {
+            's' : 'step',
+            'st': 'step_till',
+            'r': 'run',
+            'stack': 'stack',
+            'reg': 'registers',
+            'c': 'context',
+            'set': 'set',
+            'stack' : 'stack',
+            'skset': 'skset',
+            'sp': 'stackReplace',
+        }
+
+    def stackReplace(self, *new_values):
+        new_stack = []
+        for i in new_values:
+            i = int(i)
+            new_stack.append(i)
+        self.vm.memory.stack = new_stack
+
+    def stack(self):
+        print self.vm.memory.stack
+
+    def skset(self, index, value):
+        index = int(index)
+        value = int(value)
+        self.vm.memory.stack.insert(index, value)
+
+    def set(self, address, value):
+        address = int(address)
+        value = int(value)
+        self.vm.memory.set(address, value)
+
+    def registers(self):
+        for i in range(32768, 32776):
+            self.c.red_print("%i: %s" % (i, self.vm.memory.get(i)))
+
+    def context(self, size):
+        current_spot = self.vm.location
+        size = int(size)
+
+        for i in range(current_spot - 1, current_spot + size):
+            address = self.vm.memory.getAddress(i)
+            if address > 32767:
+                val = "%s:%s" % (address, self.vm.memory.get(i))
+            else:
+                val = self.vm.memory.get(i)
+
+            try:
+                print "%i: %s, %i" % (i, self.codes[val], val)
+            except KeyError:
+                print "%i: %s" % (i, val)
+
     def run_cmd(self, cmd):
         parts = cmd.split(' ')
         f_name = self.func_map[parts[0]]
         func = getattr(self, f_name)
 
-        if parts[1]:
-            func(parts[1])
-        else:
-            func()
+        func(*parts[1:])
 
     def go(self):
         while True:
-            cmd = raw_input('what do: ')
+            self.c.green_print('what do: ')
+            cmd = raw_input()
             self.run_cmd(cmd)
 
     def step(self, n):
@@ -74,6 +120,16 @@ class debugger:
             op_code = self.vm.memory.get(self.vm.location)
             current_op = self.codes[op_code]
             self.vm.step(1)
+
+    def run(self):
+        runnin = True
+
+        while runnin:
+            try:
+                self.vm.step(1)
+            except KeyboardInterrupt:
+                runnin = False
+                self.vm.location -= 1
 
 if __name__ == "__main__":
     v = Vm('challenge.bin')
