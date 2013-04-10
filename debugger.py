@@ -31,7 +31,7 @@ class debugger:
                 9: 'ADD',
                 10: 'MULT',
                 11: 'MOD',
-                12: 'BAND',
+                12: 'AND',
                 13: 'OR',
                 14: 'NOT',
                 15: 'RMEM',
@@ -54,7 +54,14 @@ class debugger:
             'stack' : 'stack',
             'skset': 'skset',
             'sp': 'stackReplace',
+            'loc': 'location',
         }
+
+    def location(self, value=None):
+        if value == None:
+            print self.vm.location
+        else:
+            self.vm.location = int(value)
 
     def stackReplace(self, *new_values):
         new_stack = []
@@ -80,8 +87,12 @@ class debugger:
         for i in range(32768, 32776):
             self.c.red_print("%i: %s" % (i, self.vm.memory.get(i)))
 
-    def context(self, size):
-        current_spot = self.vm.location
+    def context(self, size, location=None):
+        if location is None:
+            current_spot = self.vm.location
+        else:
+            current_spot = int(location)
+
         size = int(size)
 
         for i in range(current_spot - 1, current_spot + size):
